@@ -2,15 +2,15 @@
   'use strict';
 
   angular
-    .module('fullPage.js', [])
-    .directive('fullPage', fullPage);
+      .module('fullPage.js', [])
+      .directive('fullPage', fullPage);
 
   fullPage.$inject = ['$timeout'];
 
   function fullPage($timeout) {
     var directive = {
       restrict: 'A',
-      scope: {options: '='},
+      scope: {options: '=',leaveCallback: '&'},
       link: link
     };
 
@@ -19,34 +19,11 @@
     function link(scope, element) {
       var pageIndex;
       var slideIndex;
-      var afterRender;
-      var onLeave;
-      var onSlideLeave;
-
-      if (typeof scope.options === 'object') {
-        if (scope.options.afterRender) {
-          afterRender = scope.options.afterRender;
-        }
-
-        if (scope.options.onLeave) {
-          onLeave = scope.options.onLeave;
-        }
-
-        if (scope.options.onSlideLeave) {
-          onSlideLeave = scope.options.onSlideLeave;
-        }
-      } else if(typeof options === 'undefined') {
-        scope.options = {};
-      }
 
       var rebuild = function() {
         destroyFullPage();
 
         angular.element(element).fullpage(sanatizeOptions(scope.options));
-
-        if (typeof afterRender === 'function') {
-          afterRender();
-        }
       };
 
       var destroyFullPage = function() {
@@ -56,11 +33,19 @@
       };
 
       var sanatizeOptions = function(options) {
-        options.afterRender = afterAngularRender;
-        options.onLeave = onAngularLeave;
-        options.onSlideLeave = onAngularSlideLeave;
+        options.onLeave = function(page, next){
+          pageIndex = next;
+          scope.leaveCallback({page:page,next:next});
+        };
 
-        function afterAngularRender() {
+        options.onSlideLeave = function(anchorLink, page, slide, direction, next){
+          pageIndex   = page;
+          slideIndex  = next;
+          scope.leaveCallback({page:page,next:next});
+
+        };
+
+        options.afterRender = function(){
           //We want to remove the HREF targets for navigation because they use hashbang
           //They still work without the hash though, so its all good.
           if (options && options.navigation) {
@@ -72,24 +57,7 @@
               $.fn.fullpage.silentMoveTo(pageIndex, slideIndex);
             });
           }
-        }
-
-        function onAngularLeave(page, next){
-          pageIndex = next;
-
-          if (typeof onLeave === 'function') {
-            onLeave();
-          }
-        }
-
-        function onAngularSlideLeave(anchorLink, page, slide, direction, next) {
-          pageIndex   = page;
-          slideIndex  = next;
-
-          if (typeof onSlideLeave === 'function') {
-            onSlideLeave();
-          }
-        }
+        };
 
         //if we are using a ui-router, we need to be able to handle anchor clicks without 'href="#thing"'
         $(document).on('click', '[data-menuanchor]', function () {

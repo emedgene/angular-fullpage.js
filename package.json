@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "angular": ">=1.2.0",
-    "fullpage.js": "~2.7.7"
+    "fullpage.js": "~2.9.7"
   },
   "devDependencies": {
     "gulp": "^3.9.0",
